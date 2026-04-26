@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: calc-api
+  labels:
+    app: calc-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: calc-api
+  template:
+    metadata:
+      labels:
+        app: calc-api
+    spec:
+      containers:
+        - name: calc-api
+          image: jairagui/calc-api:latest
+          ports:
+            - containerPort: 5000
