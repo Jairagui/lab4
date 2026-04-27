@@ -13,21 +13,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Configurar kubectl
-        run: |
-          mkdir -p $HOME/.kube
-          echo "${{ secrets.KUBECONFIG_B64 }}" | base64 -d > $HOME/.kube/config
-
-      - name: Aplicar manifests
-        run: |
-          kubectl apply -f k8s/deployment.yaml
-          kubectl apply -f k8s/service.yaml
-
-      - name: Esperar deployment
-        run: kubectl rollout status deployment/calc-api --timeout=120s
-
-      - name: Ver pods
-        run: kubectl get pods
-
-      - name: Ver servicio
-        run: kubectl get svc calc-api-service
+      - name: Aplicar manifests al cluster
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            sudo kubectl apply -f https://raw.githubusercontent.com/${{ github.repository }}/main/k8s/deployment.yaml
+            sudo kubectl apply -f https://raw.githubusercontent.com/${{ github.repository }}/main/k8s/service.yaml
+            sudo kubectl rollout status deployment/calc-api --timeout=120s
+            sudo kubectl get pods
+            sudo kubectl get svc calc-api-service
