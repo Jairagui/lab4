@@ -13,15 +13,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Aplicar manifests al cluster
-        uses: appleboy/ssh-action@v1
+      - name: Configurar AWS
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ubuntu
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            sudo kubectl apply -f https://raw.githubusercontent.com/${{ github.repository }}/main/k8s/deployment.yaml
-            sudo kubectl apply -f https://raw.githubusercontent.com/${{ github.repository }}/main/k8s/service.yaml
-            sudo kubectl rollout status deployment/calc-api --timeout=120s
-            sudo kubectl get pods
-            sudo kubectl get svc calc-api-service
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Configurar kubectl
+        run: aws eks update-kubeconfig --name ${{ secrets.AWS_CLUSTER_NAME }} --region ${{ secrets.AWS_REGION }}
+
+      - name: Aplicar manifests
+        run: |
+          kubectl apply -f k8s/deployment.yaml
+          kubectl apply -f k8s/service.yaml
+          kubectl rollout restart deployment/calc-api
+          kubectl rollout status deployment/calc-api --timeout=120s
+          kubectl get pods
+          kubectl get svc calc-api-service
